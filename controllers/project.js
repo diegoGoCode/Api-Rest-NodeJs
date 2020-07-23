@@ -1,6 +1,7 @@
 'use strict'
 
 var Project = require('../models/project');
+var fs = require('fs');
 
 var controller  = {
     saveProject: function(req, res){
@@ -66,6 +67,38 @@ var controller  = {
                 projectDeleted: projectDeleted
             });
         });
+    },
+    uploadImage: function(req, res){
+        var idProject = req.params.id;
+        var fileName = 'Imagen no subida...';
+
+        if(req.files){
+            var filePath = req.files.image.path;
+            var fileSplit = filePath.split('\\');
+            var fileName = fileSplit[1];
+            var extSplit = fileName.split('\.');
+            var fileExt = extSplit[1];
+
+            if(fileExt == 'png' || fileExt == 'jpg' || fileExt == 'jpeg' || fileExt == 'gif'){
+                Project.findByIdAndUpdate(idProject, {image: fileName}, {new:true}, (err, projectUpdated) => {
+                    if(err) return res.status(500).send({message:'Error al cargar la imagen'});
+                    if(!projectUpdated) return res.status(404).send({message:'El proyecto no existe, no se ha asigado la imagen'});
+                    return  res.status(200).send({
+                        projectUpdated: projectUpdated
+                    });
+                });
+            }else{
+                fs.unlink(filePath, (err) =>{
+                    return res.status(400).send({message:'La extencion: .'+fileExt+' no es valida para cargar una imagen'});
+                }); 
+            }
+            
+            
+        }else{
+            return res.status(200).send({
+                message: fileName
+            });
+        }
     }
 };
 
